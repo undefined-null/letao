@@ -62,6 +62,12 @@
 				type: "get",
 				url: "/api/address/queryAddress",
 				success: function(info) {
+					if (info.error) {
+						mui.alert('您还没有登录，请先登录！', '', '', function () {
+							location.href = 'login.html?url=' + location.href;
+						});
+						return;
+					}
 					var lis = template('tpl', {"list": info});
 					$('.mui-table-view').append(lis);
 				}
@@ -75,9 +81,7 @@
 					url: "/api/address/deleteAddress",
 					data: {id: id},
 					success: function (info) {
-						if (info.success) {
-							_this.parents('li').remove();
-						}
+						if (info.error) return _this.parents('li').remove();
 					}
 				});
 			});

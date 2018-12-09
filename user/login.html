@@ -48,6 +48,21 @@
 		<script src="../res/mui/js/mui.min.js"></script>
 		<script src="../js/jquery.min.js" type="text/javascript" charset="utf-8"></script>
 		<script type="text/javascript">
+			var search = location.search.slice(1);
+			search = search.split('?');
+			var url = {};
+			for (var i = 0; i < search.length; i++) {
+				var temp = search[i].split('=');
+				url[temp[0]] = temp[1];
+			}
+			delete url[""];
+			console.log(url);
+			if (JSON.stringify(url) == '{}') { // 判断对象是否为空
+				url.url = '/';
+			}
+			console.log(Object.keys(url).length); // 获取对象长度
+//			var url = search.split('=')[1] || '/';
+			
 			$('form').on('submit', function () {
 				var data = $(this).serialize();
 				// console.log(data);
@@ -59,7 +74,11 @@
    					success: function (info) {
    						//console.log(info);
    						if (info.success) {
-       						location.href = './index.html';
+   							if (Object.keys(url).length == 2) {
+   								location.href = url.url + '?id=' + url.id;
+   							} else {
+   								location.href = url.url;
+   							}
 	     				} else {
 	     					alert(info.message);
 	     					$('.null').val('');
