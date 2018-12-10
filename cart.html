@@ -34,10 +34,11 @@
 				<a href="javascript:;" class="icon_refresh fa fa-refresh"></a>
 			</header>
 			<div class="cz_container mui-scroll-wrapper">
-				<ul class="mui-table-view" id="cart">
-
-				</ul>
-
+				<div class="mui-scroll">
+	                <ul class="mui-table-view" id="cart">
+						
+	                </ul>
+	            </div>
 				<div class="cart_order">订单总额：&yen;1022.00
 					<a href="#">生成订单</a>
 				</div>
@@ -76,50 +77,151 @@
 			{{/each}}
 		</script>
 		<script>
-			mui.init({
-				pullRefresh: {
-					container: ".mui-scroll-wrapper",
-					down: {
-						height: 50,
-						auto: true,
-						contentdown: "下拉可以刷新",
-						contentover: "释放立即刷新",
-						contentrefresh: "正在刷新...",
-						callback: function() {
-							$.ajax({
-								type: "get",
-								url: "/api/cart/queryCartPaging",
-								data: {
-									page: 1,
-									pageSize: 5
-								},
-								success: function(info) {
-									if(info.error) {
-										mui.alert('您还没有登录，请先登录！', '', '', function() {
-											location.href = '/user/login.html?url=' + location.href;
-										});
-										return;
-									}
-									// console.log(info);
-									var html = template('tpl', info);
-									$('#cart').html(html);
-									// 请求完成时终止刷新
-									mui('.mui-scroll-wrapper').pullRefresh().endPulldownToRefresh();
-								}
-							});
-						}
-					},
-//					up: {
+//			var page = 1;
+//			var pageSize = 5;
+//			mui.init({
+//				pullRefresh: {
+//					container: ".cz_container",
+//					down: {
 //						height: 50,
 //						auto: true,
+//						contentdown: "下拉可以刷新",
+//						contentover: "释放立即刷新",
+//						contentrefresh: "正在刷新...",
+//						callback: function () {
+//							$.ajax({
+//								type: "get",
+//								url: "/api/cart/queryCartPaging",
+//								data: {
+//									page: page,
+//									pageSize: pageSize
+//								},
+//								success: function(info) {
+//									if(info.error) {
+//										mui.alert('您还没有登录，请先登录！', '', '', function() {
+//											location.href = '/user/login.html?url=' + location.href;
+//										});
+//										return;
+//									}
+//									// console.log(info);
+//									var html = template('tpl', info);
+//									$('#cart').html(html);
+//									// 请求完成时终止刷新
+//									mui('.cz_container').pullRefresh().endPulldownToRefresh();
+//									page++;
+//									mui('.cz_container').pullRefresh().enablePullupToRefresh();
+//								}
+//							});
+//						}
+//					},
+//					up: {
+//						height: 50,
+//						auto: false,
 //						contentrefresh: "正在加载...",
 //						contentnomore: '没有更多数据了',
 //						callback: function () {
-//							console.log(1)
+//							$.ajax({
+//								url: '/api/cart/queryCartPaging',
+//                              type: 'get',
+//                              data: {
+//                                  page: page,
+//                                  pageSize: pageSize
+//                              },
+//                              success: function (info) {
+////                              	console.log(info);
+//                              	if(info.length == 0) {
+//                                      mui('.cz_container').pullRefresh().endPullupToRefresh(true);
+//                                      return;
+//                                  }
+//                              	var html = template('tpl', info);
+//                              	// 一定追加
+//                                  $('#cart').append(html);
+//
+//                                  // 手动终止请求
+//                                  mui('.cz_container').pullRefresh().endPullupToRefresh();
+//                              }
+//							});
 //						}
 //					}
-				}
-			});
+//				}
+//			});
+		var page = 1;
+        var pageSize = 5;
+
+        mui(function(){
+            mui.init({
+                pullRefresh : {
+                    container: ".cz_container",
+                    down: {
+                        height: 50,
+                        auto: true,
+                        contentdown: "下拉可以刷新",
+                        contentover: "释放立即刷新",
+                        contentrefresh: "正在刷新...",
+                        callback: function () {
+                            $.ajax({
+                                url: '/api/cart/queryCartPaging',
+                                type: 'get',
+                                data: {
+                                    // 刷新永远为第1页
+                                    page: 1,
+                                    pageSize: pageSize
+                                },
+                                success: function (info) {
+                                    // console.log(info);
+                                    // 调用模板引擎
+                                    var html = template('tpl', info);
+                                    // 添加DOM
+                                    $('#cart').html(html);
+                                    
+                                    // 当请求完成时需要手动
+                                    // 终止请求（官方文档有误）
+                                    mui('.cz_container').pullRefresh().endPulldownToRefresh();
+
+                                    // 下拉刷新后将页码重置为1
+                                    page = 1;
+                                    mui('.cz_container').pullRefresh().enablePullupToRefresh();
+                                }
+                            });
+                        }
+                    },
+                    up: {
+                        height: 50,
+                        auto: false,
+                        contentrefresh: "正在加载...",
+                        contentnomore: '没有更多数据了',
+                        callback: function () {
+                            page++;
+                            // 发送请求请求更多数据
+                            $.ajax({
+                                url: '/api/cart/queryCartPaging',
+                                type: 'get',
+                                data: {
+                                    page: page,
+                                    pageSize: pageSize
+                                },
+                                success: function (info) {
+                                    console.log(info);
+                                    // 终止上拉交互
+                                    if(info.length == 0) {
+                                        mui('.cz_container').pullRefresh().endPullupToRefresh(true);
+                                        return;
+                                    }
+
+                                    // 调用模板引擎
+                                    var html = template('tpl', info);
+                                    // 一定追加
+                                    $('#cart').append(html);
+
+                                    // 手动终止请求
+                                    mui('.cz_container').pullRefresh().endPullupToRefresh();
+                                }
+                            });
+                        }
+                    }
+                }
+            });
+        });
 		</script>
 	</body>
 
