@@ -13,6 +13,17 @@
 		<link rel="stylesheet" href="res/fontAwesome/css/font-awesome.min.css" />
 		<link rel="stylesheet" href="css/common.css" />
 		<link rel="stylesheet" href="css/cart.css" />
+		<style type="text/css">
+			.mui-scroll-wrapper {
+				padding: 0;
+				top: 45px;
+				bottom: 50px;
+			}
+			
+			.mui-pull-bottom-pocket {
+				position: absolute;
+			}
+		</style>
 	</head>
 
 	<body>
@@ -23,9 +34,10 @@
 				<a href="javascript:;" class="icon_refresh fa fa-refresh"></a>
 			</header>
 			<div class="cz_container mui-scroll-wrapper">
-				<ul class="mui-table-view mui-scroll">
-					
+				<ul class="mui-table-view" id="cart">
+
 				</ul>
+
 				<div class="cart_order">订单总额：&yen;1022.00
 					<a href="#">生成订单</a>
 				</div>
@@ -41,7 +53,7 @@
 		<script src="js/jquery.min.js" type="text/javascript" charset="utf-8"></script>
 		<script src="js/template-web.js" type="text/javascript" charset="utf-8"></script>
 		<script type="text/template" id="tpl">
-			{{each list value}}
+			{{each data value}}
 			<li data-product="" class="mui-table-view-cell">
 				<div class="mui-slider-right mui-disabled">
 					<a class="mui-btn mui-btn-blue">编辑</a>
@@ -64,47 +76,48 @@
 			{{/each}}
 		</script>
 		<script>
-			mui(function() {
-				mui.init();
-				mui('.mui-table-view').on('tap', '.mui-btn-red', function() {
-					var btnArray = ['是', '否'];
-					mui.confirm('你要删除这件商品吗？', '温馨提示', btnArray, function(e) {
-						if(e.index == 0) {
-
-						} else {
-
+			mui.init({
+				pullRefresh: {
+					container: ".mui-scroll-wrapper",
+					down: {
+						height: 50,
+						auto: true,
+						contentdown: "下拉可以刷新",
+						contentover: "释放立即刷新",
+						contentrefresh: "正在刷新...",
+						callback: function() {
+							$.ajax({
+								type: "get",
+								url: "/api/cart/queryCartPaging",
+								data: {
+									page: 1,
+									pageSize: 5
+								},
+								success: function(info) {
+									if(info.error) {
+										mui.alert('您还没有登录，请先登录！', '', '', function() {
+											location.href = '/user/login.html?url=' + location.href;
+										});
+										return;
+									}
+									// console.log(info);
+									var html = template('tpl', info);
+									$('#cart').html(html);
+									// 请求完成时终止刷新
+									mui('.mui-scroll-wrapper').pullRefresh().endPulldownToRefresh();
+								}
+							});
 						}
-					})
-				});
-				mui('.mui-table-view').on('tap', '.mui-btn-blue', function(e) {
-					e.detail.gesture.preventDefault(); //修复iOS 8.x平台存在的bug，使用plus.nativeUI.prompt会造成输入法闪一下又没了
-					var btnArray = ['确定', '取消'];
-					var template = '<input type="number" placeholder="选择数量"/><br>' +
-						'<input type="text" placeholder="选择尺码" />';
-					mui.confirm(template, '编辑商品', btnArray, function(e) {
-						if(e.index == 0) {
-
-						} else {
-
-						}
-					})
-				});
-				mui('.mui-scroll-wrapper').scroll();
-			});
-			
-			$.ajax({
-				type: "get",
-				url: "/api/cart/queryCart",
-				success: function (info) {
-					if (info.error) {
-						mui.alert('您还没有登录，请先登录！', '', '', function () {
-							location.href = '/user/login.html?url=' + location.href;
-						});
-						return;
-					}
-					console.log(info);
-					var html = template('tpl', {"list": info});
-					$('.mui-table-view').html(html);
+					},
+//					up: {
+//						height: 50,
+//						auto: true,
+//						contentrefresh: "正在加载...",
+//						contentnomore: '没有更多数据了',
+//						callback: function () {
+//							console.log(1)
+//						}
+//					}
 				}
 			});
 		</script>
